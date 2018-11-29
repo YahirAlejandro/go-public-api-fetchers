@@ -7,88 +7,69 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"reflect"
 	"strings"
 )
 
-func flagCleaner(flag *string) {
-	// 'flag' is a pointer of type string
-	// All values passed here are ponters to actual values, which this function will
-	// modify, to manipulate them in the main function scope.
-	// Remember to access the pointer by "*", otherwise the memory address will be modified.
-	*flag = strings.Replace(*flag, " ", "+", -1)
-}
-
-func queryAPI(url string) []byte {
-	// queryAPI: Fetch a url string using Get and returns a []byte slice.
-	req, err := http.Get(url)
-	if err != nil {
-		fmt.Printf("%s\n", err)
-		log.Fatal(err)
-	}
-
-	resp, err := ioutil.ReadAll(req.Body)
-	defer req.Body.Close()
-
-	return resp
-}
-
-type availableJob struct {
-	Id          string `json:"id"`
+type fetchJobs struct {
+	ID          string `json:"id"`
 	CreatedAt   string `json:"created_at"`
 	Title       string `json:"title"`
 	Location    string `json:"location"`
 	Type        string `json:"type"`
 	Description string `json:"description"`
-	Url         string `json:"company_url"`
-	HowToApply  string
-	Company     string
-	CompanyUrl  string
-	CompanyLogo string
+	HowToApply  string `json:"how_to_apply"`
+	Company     string `json:"company"`
+	CompanyURL  string `json:"company_url"`
+	CompanyLogo string `json:"company_logo"`
+	URL         string `json:"url"`
 }
 
 func main() {
-
-	// Catch flags
-	// Valid flags to build $baseurlrequest
-	jobDescriptionFlag := flag.String("desc", "devops", "The job description you're interested in")
-	jobLocationFlag := flag.String("loc", "new+york", "The location of the job you're looking for")
-
-	// Parse commandline output
+	// Flag definition, parsing and sanitizing
+	jobDescriptionFlag := flag.String("desc", "devops", "It defaults to 'devops'")
+	jobLocationFlag := flag.String("loc", "", "It defaults to nothing")
 	flag.Parse()
 
-	// Append all flag vars to an array to easily for through it:
-	// Here all pointers are passed into the sanitizer function.
-	// Once pointers reach the sanitizer function, it will use the pointer to mutate
-	// the value they're pointed to.
-	flagVarsArray := []*string{jobDescriptionFlag, jobLocationFlag}
+	flagVarsSlice := []*string{jobDescriptionFlag, jobLocationFlag}
 
-	// Send all flag vars to sanitize
-	for _, n := range flagVarsArray {
-		flagCleaner(n)
+	for _, j := range flagVarsSlice {
+		flagSanitizer(j)
 	}
 
+	resp := queryAPIEndpoint(jobDescriptionFlag, jobLocationFlag)
+
+	rJobs := []fetchJobs{}
+
+	err := json.Unmarshal([]byte(resp), &rJobs)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	for i, v := range rJobs {
+		i++
+		fmt.Printf("%d - %v: %v\n\t%v\n", i, v.Company, v.Title, v.Location)
+	}
+}
+
+func flagSanitizer(stringToClean *string) {
+	*stringToClean = strings.Replace(*stringToClean, " ", "+", -1)
+}
+
+func queryAPIEndpoint(jobDescriptionFlag, jobLocationFlag *string) []byte {
 	// Building the URL
 	const baseurl = "https://jobs.github.com/positions.json?"
 	jobDescription := "description=" + *jobDescriptionFlag
 	jobLocation := "location=" + *jobLocationFlag
 	url := baseurl + jobDescription + "&" + jobLocation
 
-	resp := queryAPI(url)
-
-	if len(resp) > 2 {
-		fmt.Printf("%v\n", resp[0])
-	} else {
-		fmt.Printf("There were %d results, try another query.\n", cap(resp))
-	}
-
-	job := []availableJob{}
-	err := json.Unmarshal(resp, &job)
+	req, err := http.Get(url)
 	if err != nil {
 		fmt.Printf("%s\n", err)
 		log.Fatal(err)
 	}
-	fmt.Printf("%d\n", len(job))
-	fmt.Println(reflect.TypeOf(job))
+	resp, err := ioutil.ReadAll(req.Body)
+	defer req.Body.Close()
+
+	return resp
 
 }
