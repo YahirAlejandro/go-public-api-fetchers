@@ -8,7 +8,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"telebotclient"
+
+	"github.com/YahirAlejandro/go-public-api-fetchers/github-jobs/telebotclient"
 )
 
 type fetchJobs struct {
