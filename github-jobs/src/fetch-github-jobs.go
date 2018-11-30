@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"telebotclient"
 )
 
 type fetchJobs struct {
@@ -22,6 +23,29 @@ type fetchJobs struct {
 	CompanyURL  string `json:"company_url"`
 	CompanyLogo string `json:"company_logo"`
 	URL         string `json:"url"`
+}
+
+func flagSanitizer(stringToClean *string) {
+	*stringToClean = strings.Replace(*stringToClean, " ", "+", -1)
+}
+
+func queryAPIEndpoint(jobDescriptionFlag, jobLocationFlag *string) []byte {
+	// Building the URL
+	const baseurl = "https://jobs.github.com/positions.json?"
+	jobDescription := "description=" + *jobDescriptionFlag
+	jobLocation := "location=" + *jobLocationFlag
+	url := baseurl + jobDescription + "&" + jobLocation
+
+	req, err := http.Get(url)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+		log.Fatal(err)
+	}
+	resp, err := ioutil.ReadAll(req.Body)
+	defer req.Body.Close()
+
+	return resp
+
 }
 
 func main() {
@@ -49,27 +73,5 @@ func main() {
 		i++
 		fmt.Printf("%d - %v: %v\n\t%v\n", i, v.Company, v.Title, v.Location)
 	}
-}
-
-func flagSanitizer(stringToClean *string) {
-	*stringToClean = strings.Replace(*stringToClean, " ", "+", -1)
-}
-
-func queryAPIEndpoint(jobDescriptionFlag, jobLocationFlag *string) []byte {
-	// Building the URL
-	const baseurl = "https://jobs.github.com/positions.json?"
-	jobDescription := "description=" + *jobDescriptionFlag
-	jobLocation := "location=" + *jobLocationFlag
-	url := baseurl + jobDescription + "&" + jobLocation
-
-	req, err := http.Get(url)
-	if err != nil {
-		fmt.Printf("%s\n", err)
-		log.Fatal(err)
-	}
-	resp, err := ioutil.ReadAll(req.Body)
-	defer req.Body.Close()
-
-	return resp
-
+	fmt.Println(telebotclient.GetToken())
 }
