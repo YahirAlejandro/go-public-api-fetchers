@@ -74,5 +74,5 @@ func main() {
 		i++
 		fmt.Printf("%d - %v: %v\n\t%v\n", i, v.Company, v.Title, v.Location)
 	}
-	fmt.Println(telebotclient.GetToken())
+	telebotclient.SendTelegramMessage("Tis")
 }
