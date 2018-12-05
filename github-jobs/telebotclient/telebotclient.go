@@ -17,7 +17,7 @@ func check(src string, e error) {
 func getToken() string {
 	pwd, _ := os.Getwd()
 
-	tok, err := ioutil.ReadFile(pwd + "/conf/token")
+	tok, err := ioutil.ReadFile(pwd + "/conf/token.conf")
 	check("getToken: ", err)
 
 	return string(tok)
