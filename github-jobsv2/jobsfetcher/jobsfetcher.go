@@ -1,5 +1,12 @@
 package jobsfetcher
 
+import (
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+)
+
 type githubJob struct {
 	ID          string `json:"id"`
 	CreatedAt   string `json:"created_at"`
@@ -15,5 +22,22 @@ type githubJob struct {
 }
 
 func queryAPIEndpoint(jobDescriptionFlag, jobLocationFlag *string) []byte {
-	const
+	baseurl := "https://jobs.github.com/positions.json?"
+	jobDescription := "description=" + *jobDescriptionFlag
+	jobLocation := "location=" + *jobLocationFlag
+	url := baseurl + jobDescription + "&" + jobLocation
+
+	req, err := http.Get(url)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+		log.Fatal(err)
+	}
+	resp, err := ioutil.ReadAll(req.Body)
+	defer req.Body.Close()
+
+	return resp
+}
+
+func FetchSource() {
+
 }
