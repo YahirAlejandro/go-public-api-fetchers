@@ -1,10 +1,13 @@
 package jobsfetcher
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/YahirAlejandro/go-public-api-fetchers/github-jobsv2/telegrambot"
 )
 
 type githubJob struct {
@@ -21,23 +24,42 @@ type githubJob struct {
 	URL         string `json:"url"`
 }
 
-func queryAPIEndpoint(jobDescriptionFlag, jobLocationFlag *string) []byte {
+func checkError(src string, e error) {
+	if e != nil {
+		log.Fatal(src, e)
+	}
+}
+
+func queryAPIEndpoint() []byte {
 	baseurl := "https://jobs.github.com/positions.json?"
-	jobDescription := "description=" + *jobDescriptionFlag
-	jobLocation := "location=" + *jobLocationFlag
+	jobDescription := "description=devops"
+	jobLocation := "location=ny"
 	url := baseurl + jobDescription + "&" + jobLocation
 
 	req, err := http.Get(url)
-	if err != nil {
-		fmt.Printf("%s\n", err)
-		log.Fatal(err)
-	}
+	checkError("Getting JSON jobs via GET: ", err)
+
 	resp, err := ioutil.ReadAll(req.Body)
 	defer req.Body.Close()
 
 	return resp
 }
 
-func FetchSource() {
+func unmarshalResponse(respByte []byte) {
+	rJobs := []githubJob{}
 
+	err := json.Unmarshal([]byte(respByte), &rJobs)
+	checkError("Unmarshaling job response: ", err)
+
+	for i, v := range rJobs {
+		i++
+		jobPostingMessage := fmt.Sprintf("%d - %v: %v\n\t%v\n", i, v.Company, v.Title, v.Location)
+		telegrambot.SendMessage(jobPostingMessage)
+	}
+
+}
+
+func Fetch() {
+	jobs := queryAPIEndpoint()
+	unmarshalResponse(jobs)
 }
