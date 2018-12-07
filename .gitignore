@@ -1,1 +1,4 @@
-test_token.conf
+token.conf
+conf/token.conf
+*.conf
+.gitignore

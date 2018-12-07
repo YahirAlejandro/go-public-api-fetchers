@@ -51,12 +51,20 @@ func unmarshalResponse(respByte []byte) {
 	err := json.Unmarshal([]byte(respByte), &rJobs)
 	checkError("Unmarshaling job response: ", err)
 
+	var jobList string
+
 	for i, v := range rJobs {
 		i++
-		jobPostingMessage := fmt.Sprintf("%d - %v: %v\n\t%v\n", i, v.Company, v.Title, v.Location)
-		telegrambot.SendMessage(jobPostingMessage)
+		// These aren't really useful until sanitized...
+		//jobDescription := fmt.Sprintf("%v...", v.Description[3:160])
+		//jobPostingMessage := fmt.Sprintf("%d.- %v:\n %v.\n⚐ %v ⚐\n\n\t\t • \"%v\"\n ➤ %v\n\n\n", i, v.Company, v.Title, v.Location, jobDescription, v.URL)
+
+		jobPostingMessage := fmt.Sprintf("%d.- %v:\n • %v.\n⚐ %v ⚐\n➤ %v\n\n", i, v.Company, v.Title, v.Location, v.URL)
+
+		jobList = jobList + jobPostingMessage
 	}
 
+	telegrambot.SendMessage(jobList)
 }
 
 func Fetch() {
